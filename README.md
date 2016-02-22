@@ -14,9 +14,7 @@ Requirements
 Usage
 =====
 Syntax: `GXTConvert.exe <input directory> <output directory> [options]`
-
-* Options
- * `--keep | -k`: Do not overwrite existing output files
+* `--keep | -k`: Do not overwrite existing output files
 
 Example: `GXTConvert.exe "C:\Temp\GXT\files" "C:\Temp\GXT\output"`
 
