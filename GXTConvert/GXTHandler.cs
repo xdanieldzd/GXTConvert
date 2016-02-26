@@ -53,15 +53,42 @@ namespace GXTConvert
         public uint DataSize { get; private set; }
         public int PaletteIndex { get; private set; }
         public uint Flags { get; private set; }
-        public SceGxmTextureType TextureType { get; private set; }
-        public SceGxmTextureFormat TextureFormat { get; private set; }
-        public ushort Width { get; private set; }
-        public ushort Height { get; private set; }
-        public ushort NumMipmaps { get; private set; }
-        public ushort Unknown0x3E { get; private set; }
+        public uint[] ControlWords { get; private set; }
+
+        public SceGxmTextureType GetTextureType(uint version)
+        {
+            if (version == 0x10000003) return (SceGxmTextureType)ControlWords[0];
+            else if (version == 0x10000002) return (SceGxmTextureType)ControlWords[2]; //TODO: verify me!
+            else throw new VersionNotImplementedException(version);
+        }
+
+        public SceGxmTextureFormat GetTextureFormat(uint version)
+        {
+            if (version == 0x10000003) return (SceGxmTextureFormat)ControlWords[1];
+            else if (version == 0x10000002) return (SceGxmTextureFormat)ControlWords[3]; //TODO: verify me!
+            else throw new VersionNotImplementedException(version);
+        }
+
+        public ushort GetWidth(uint version)
+        {
+            if (version == 0x10000003) return (ushort)(ControlWords[2] & 0xFFFF);
+            else if (version == 0x10000002) return (ushort)(ControlWords[0] & 0xFFFF); //TODO: verify me! (seems wrong)
+            else throw new VersionNotImplementedException(version);
+        }
+
+        public ushort GetHeight(uint version)
+        {
+            if (version == 0x10000003) return (ushort)(ControlWords[2] >> 16);
+            else if (version == 0x10000002) return (ushort)(ControlWords[1] & 0xFFFF); //TODO: verify me! (seems wrong)
+            else throw new VersionNotImplementedException(version);
+        }
+
         //TODO: where's byteStride for texture type LinearStrided?
 
-        public SceGxmTextureBaseFormat TextureBaseFormat { get { return (SceGxmTextureBaseFormat)((uint)TextureFormat & 0xFFFF0000); } }
+        public SceGxmTextureBaseFormat GetTextureBaseFormat(uint version)
+        {
+            return (SceGxmTextureBaseFormat)((uint)GetTextureFormat(version) & 0xFFFF0000);
+        }
 
         public SceGxtTextureInfo(Stream stream)
         {
@@ -71,12 +98,8 @@ namespace GXTConvert
             DataSize = reader.ReadUInt32();
             PaletteIndex = reader.ReadInt32();
             Flags = reader.ReadUInt32();
-            TextureType = (SceGxmTextureType)reader.ReadUInt32();
-            TextureFormat = (SceGxmTextureFormat)reader.ReadUInt32();
-            Width = reader.ReadUInt16();
-            Height = reader.ReadUInt16();
-            NumMipmaps = reader.ReadUInt16();
-            Unknown0x3E = reader.ReadUInt16();
+            ControlWords = new uint[4];
+            for (int i = 0; i < ControlWords.Length; i++) ControlWords[i] = reader.ReadUInt32();
         }
     }
 
@@ -181,7 +204,8 @@ namespace GXTConvert
                 byte[] pixelData = null;
                 bool needPostProcess = true;
 
-                switch (info.TextureFormat)
+                SceGxmTextureFormat textureFormat = info.GetTextureFormat(Header.Version);
+                switch (textureFormat)
                 {
                     case SceGxmTextureFormat.U8U8U8U8_ARGB:
                         pixelFormat = PixelFormat.Format32bppArgb;
@@ -224,7 +248,7 @@ namespace GXTConvert
                     case SceGxmTextureFormat.UBC2_ABGR:
                     case SceGxmTextureFormat.UBC3_ABGR:
                         pixelFormat = PixelFormat.Format32bppArgb;
-                        pixelData = Compression.DXTx.Decompress(reader, info);
+                        pixelData = Compression.DXTx.Decompress(reader, Header, info);
                         break;
 
                     case SceGxmTextureFormat.PVRT2BPP_ABGR:
@@ -233,7 +257,7 @@ namespace GXTConvert
                     case SceGxmTextureFormat.PVRT4BPP_1BGR:
                         needPostProcess = false;
                         pixelFormat = PixelFormat.Format32bppArgb;
-                        pixelData = Compression.PVRTC.Decompress(reader, info);
+                        pixelData = Compression.PVRTC.Decompress(reader, Header, info);
                         break;
 
                     case SceGxmTextureFormat.U8_1RRR:
@@ -247,13 +271,14 @@ namespace GXTConvert
                         break;
 
                     default:
-                        throw new FormatNotImplementedException(info.TextureFormat);
+                        throw new FormatNotImplementedException(textureFormat);
                 }
 
                 // TODO: is this right? PVRTC doesn't need this, but everything else does?
                 if (needPostProcess)
                 {
-                    switch (info.TextureType)
+                    SceGxmTextureType textureType = info.GetTextureType(Header.Version);
+                    switch (textureType)
                     {
                         case SceGxmTextureType.Linear:
                             // Nothing to be done!
@@ -261,34 +286,35 @@ namespace GXTConvert
 
                         case SceGxmTextureType.Tiled:
                             // TODO: verify me!
-                            pixelData = PostProcessing.UntileTexture(pixelData, info.Width, info.Height, pixelFormat);
+                            pixelData = PostProcessing.UntileTexture(pixelData, info.GetWidth(Header.Version), info.GetHeight(Header.Version), pixelFormat);
                             break;
 
                         case SceGxmTextureType.Swizzled:
-                            pixelData = PostProcessing.UnswizzleTexture(pixelData, info.Width, info.Height, pixelFormat);
+                            pixelData = PostProcessing.UnswizzleTexture(pixelData, info.GetWidth(Header.Version), info.GetHeight(Header.Version), pixelFormat);
                             break;
 
                         default:
-                            throw new TypeNotImplementedException(info.TextureType);
+                            throw new TypeNotImplementedException(textureType);
                     }
                 }
 
-                Textures[i] = CreateTexture(info, pixelFormat, pixelData, info.PaletteIndex);
+                Textures[i] = CreateTexture(Header, info, pixelFormat, pixelData, info.PaletteIndex);
 
                 // TODO: make this less kludge-like?
                 if (BUVChunk != null && allPaletteTextures != null)
                 {
                     Color[][] palettes;
-                    switch (info.TextureBaseFormat)
+                    SceGxmTextureBaseFormat textureBaseFormat = info.GetTextureBaseFormat(Header.Version);
+                    switch (textureBaseFormat)
                     {
                         case SceGxmTextureBaseFormat.P4: palettes = P4Palettes; break;
                         case SceGxmTextureBaseFormat.P8: palettes = P8Palettes; break;
-                        default: throw new PaletteNotImplementedException(info.TextureBaseFormat);
+                        default: throw new PaletteNotImplementedException(textureBaseFormat);
                     }
 
                     allPaletteTextures[i] = new Bitmap[palettes.Length];
                     for (int j = 0; j < allPaletteTextures[i].Length; j++)
-                        allPaletteTextures[i][j] = CreateTexture(info, pixelFormat, pixelData, j);
+                        allPaletteTextures[i][j] = CreateTexture(Header, info, pixelFormat, pixelData, j);
                 }
             }
 
@@ -324,9 +350,9 @@ namespace GXTConvert
             return palette;
         }
 
-        private Bitmap CreateTexture(SceGxtTextureInfo info, PixelFormat pixelFormat, byte[] pixelData, int paletteIndex = -1)
+        private Bitmap CreateTexture(SceGxtHeader header, SceGxtTextureInfo info, PixelFormat pixelFormat, byte[] pixelData, int paletteIndex = -1)
         {
-            Bitmap texture = new Bitmap(info.Width, info.Height, pixelFormat);
+            Bitmap texture = new Bitmap(info.GetWidth(header.Version), info.GetHeight(header.Version), pixelFormat);
             BitmapData bmpData = texture.LockBits(new Rectangle(0, 0, texture.Width, texture.Height), ImageLockMode.ReadWrite, texture.PixelFormat);
 
             byte[] pixelsForBmp = new byte[bmpData.Height * bmpData.Stride];
@@ -340,11 +366,12 @@ namespace GXTConvert
             if (paletteIndex != -1)
             {
                 Color[] palette;
-                switch (info.TextureBaseFormat)
+                SceGxmTextureBaseFormat textureBaseFormat = info.GetTextureBaseFormat(Header.Version);
+                switch (textureBaseFormat)
                 {
                     case SceGxmTextureBaseFormat.P4: palette = P4Palettes[paletteIndex]; break;
                     case SceGxmTextureBaseFormat.P8: palette = P8Palettes[paletteIndex]; break;
-                    default: throw new PaletteNotImplementedException(info.TextureBaseFormat);
+                    default: throw new PaletteNotImplementedException(textureBaseFormat);
                 }
 
                 ColorPalette texturePalette = texture.Palette;

@@ -48,15 +48,15 @@ namespace GXTConvert.Compression
     public static class PVRTC
     {
         // Shim function for GXT
-        public static byte[] Decompress(BinaryReader reader, SceGxtTextureInfo info)
+        public static byte[] Decompress(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 8];
 
             PVRTDecompressPVRTC(
                 reader.ReadBytes((int)info.DataSize),
-                ((SceGxmTextureBaseFormat)((uint)info.TextureFormat & 0xFFFF0000) == SceGxmTextureBaseFormat.PVRT2BPP ? 1 : 0),
-                info.Width,
-                info.Height,
+                (info.GetTextureBaseFormat(header.Version) == SceGxmTextureBaseFormat.PVRT2BPP ? 1 : 0),
+                info.GetWidth(header.Version),
+                info.GetHeight(header.Version),
                 ref pixelData);
 
             return pixelData;

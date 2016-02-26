@@ -95,7 +95,10 @@ namespace GXTConvert
 
                                 SceGxtTextureInfo info = gxtInstance.TextureInfos[i];
 
-                                IndentWriteLine("Texture #{0}: {1}x{2} ({3}, {4})", (i + 1), info.Width, info.Height, info.TextureFormat, info.TextureType);
+                                IndentWriteLine("Texture #{0}: {1}x{2} ({3}, {4})",
+                                    (i + 1),
+                                    info.GetWidth(gxtInstance.Header.Version), info.GetHeight(gxtInstance.Header.Version),
+                                    info.GetTextureFormat(gxtInstance.Header.Version), info.GetTextureType(gxtInstance.Header.Version));
                                 indent++;
 
                                 if (!outputFile.Directory.Exists) Directory.CreateDirectory(outputFile.Directory.FullName);
@@ -126,6 +129,7 @@ namespace GXTConvert
                             }
                         }
                     }
+#if !DEBUG
                     catch (FormatNotImplementedException fniEx)
                     {
                         IndentWriteLine("Format '{0}' not implemented.", fniEx.Format);
@@ -146,12 +150,14 @@ namespace GXTConvert
                     {
                         IndentWriteLine("Exception occured: {0}.", ex.Message);
                     }
+#endif
                     finally
                     {
                         indent = baseIndent;
                     }
                 }
             }
+#if !DEBUG
             catch (CommandLineArgsException claEx)
             {
                 IndentWriteLine("Invalid arguments; expected: {0}.", claEx.ExpectedArgs);
@@ -160,6 +166,7 @@ namespace GXTConvert
             {
                 IndentWriteLine("Exception occured: {0}.", ex.Message);
             }
+#endif
             finally
             {
                 stopwatch.Stop();

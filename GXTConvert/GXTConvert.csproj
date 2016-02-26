@@ -49,6 +49,7 @@
     <Compile Include="Enums.cs" />
     <Compile Include="Exceptions\CommandLineArgsException.cs" />
     <Compile Include="CommandLineTools.cs" />
+    <Compile Include="Exceptions\VersionNotImplementedException.cs" />
     <Compile Include="Exceptions\PaletteNotImplementedException.cs" />
     <Compile Include="Exceptions\TypeNotImplementedException.cs" />
     <Compile Include="Exceptions\FormatNotImplementedException.cs" />
