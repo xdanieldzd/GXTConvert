@@ -1,6 +1,6 @@
 GXTConvert
 ==========
-__GXTConvert__ is a somewhat rudimentary converter for GXT files used by games for the PlayStation Vita. It is written in C# and based on the .NET Framework.
+__GXTConvert__ is a somewhat rudimentary converter for GXT-format textures used by games for the PlayStation Vita. It is written in C# and based on the .NET Framework.
 
 Requirements
 ============
