@@ -20,6 +20,9 @@ namespace GXTConvert
 
         static void Main(string[] args)
         {
+            // "E:\[SSD User Data]\Downloads\GXT\GXT" "E:\[SSD User Data]\Downloads\GXT\__output__\ALL" -k
+            // "E:\[SSD User Data]\Downloads\GXT\__test__\" "E:\[SSD User Data]\Downloads\GXT\__output__\__test__\" -k
+
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
 

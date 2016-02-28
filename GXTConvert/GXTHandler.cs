@@ -202,80 +202,18 @@ namespace GXTConvert
 
                 PixelFormat pixelFormat;
                 byte[] pixelData = null;
-                bool needPostProcess = true;
 
                 SceGxmTextureFormat textureFormat = info.GetTextureFormat(Header.Version);
-                switch (textureFormat)
-                {
-                    case SceGxmTextureFormat.U8U8U8U8_ARGB:
-                        pixelFormat = PixelFormat.Format32bppArgb;
-                        pixelData = reader.ReadBytes((int)info.DataSize);
-                        break;
 
-                    case SceGxmTextureFormat.U8U8U8_RGB:
-                        pixelFormat = PixelFormat.Format24bppRgb;
-                        pixelData = reader.ReadBytes((int)info.DataSize);
-                        break;
+                if (!PixelDataProviders.PixelFormatMap.ContainsKey(textureFormat) || !PixelDataProviders.ProviderFunctions.ContainsKey(textureFormat))
+                    throw new FormatNotImplementedException(textureFormat);
 
-                    case SceGxmTextureFormat.U1U5U5U5_ARGB:
-                        pixelFormat = PixelFormat.Format16bppArgb1555;
-                        pixelData = reader.ReadBytes((int)info.DataSize);
-                        break;
-
-                    case SceGxmTextureFormat.U5U6U5_RGB:
-                        // TODO: verify me!
-                        pixelFormat = PixelFormat.Format16bppRgb565;
-                        pixelData = reader.ReadBytes((int)info.DataSize);
-                        break;
-
-                    case SceGxmTextureFormat.U8U8U8X8_RGB1:
-                        // TODO: verify me!
-                        pixelFormat = PixelFormat.Format32bppRgb;
-                        pixelData = reader.ReadBytes((int)info.DataSize);
-                        break;
-
-                    case SceGxmTextureFormat.P4_ABGR:
-                        pixelFormat = PixelFormat.Format4bppIndexed;
-                        pixelData = reader.ReadBytes((int)info.DataSize);
-                        break;
-
-                    case SceGxmTextureFormat.P8_ABGR:
-                        pixelFormat = PixelFormat.Format8bppIndexed;
-                        pixelData = reader.ReadBytes((int)info.DataSize);
-                        break;
-
-                    case SceGxmTextureFormat.UBC1_ABGR:
-                    case SceGxmTextureFormat.UBC2_ABGR:
-                    case SceGxmTextureFormat.UBC3_ABGR:
-                        pixelFormat = PixelFormat.Format32bppArgb;
-                        pixelData = Compression.DXTx.Decompress(reader, Header, info);
-                        break;
-
-                    case SceGxmTextureFormat.PVRT2BPP_ABGR:
-                    case SceGxmTextureFormat.PVRT2BPP_1BGR:
-                    case SceGxmTextureFormat.PVRT4BPP_ABGR:
-                    case SceGxmTextureFormat.PVRT4BPP_1BGR:
-                        needPostProcess = false;
-                        pixelFormat = PixelFormat.Format32bppArgb;
-                        pixelData = Compression.PVRTC.Decompress(reader, Header, info);
-                        break;
-
-                    case SceGxmTextureFormat.U8_1RRR:
-                        pixelFormat = PixelFormat.Format32bppArgb;
-                        pixelData = new byte[info.DataSize * 4];
-                        for (int j = 0; j < pixelData.Length; j += 4)
-                        {
-                            pixelData[j + 0] = pixelData[j + 1] = pixelData[j + 2] = reader.ReadByte();
-                            pixelData[j + 3] = 0xFF;
-                        }
-                        break;
-
-                    default:
-                        throw new FormatNotImplementedException(textureFormat);
-                }
+                pixelFormat = PixelDataProviders.PixelFormatMap[textureFormat];
+                pixelData = PixelDataProviders.ProviderFunctions[textureFormat](reader, Header, info);
 
                 // TODO: is this right? PVRTC doesn't need this, but everything else does?
-                if (needPostProcess)
+                if (info.GetTextureBaseFormat(Header.Version) != SceGxmTextureBaseFormat.PVRT2BPP &&
+                    info.GetTextureBaseFormat(Header.Version) != SceGxmTextureBaseFormat.PVRT4BPP)
                 {
                     SceGxmTextureType textureType = info.GetTextureType(Header.Version);
                     switch (textureType)
@@ -290,6 +228,8 @@ namespace GXTConvert
                             break;
 
                         case SceGxmTextureType.Swizzled:
+                        case SceGxmTextureType.Cube:
+                            // TODO: is cube really the same as swizzled? seems that way from CS' *env* files...
                             pixelData = PostProcessing.UnswizzleTexture(pixelData, info.GetWidth(Header.Version), info.GetHeight(Header.Version), pixelFormat);
                             break;
 

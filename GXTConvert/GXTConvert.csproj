@@ -54,6 +54,7 @@
     <Compile Include="Exceptions\TypeNotImplementedException.cs" />
     <Compile Include="Exceptions\FormatNotImplementedException.cs" />
     <Compile Include="Exceptions\UnknownMagicException.cs" />
+    <Compile Include="PixelDataProviders.cs" />
     <Compile Include="PostProcessing.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
