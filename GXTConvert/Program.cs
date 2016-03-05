@@ -6,6 +6,8 @@ using System.Reflection;
 using System.IO;
 
 using GXTConvert.Exceptions;
+using GXTConvert.FileFormat;
+using GXTConvert.FileFormat.BUV;
 
 namespace GXTConvert
 {
@@ -89,7 +91,7 @@ namespace GXTConvert
 
                         using (FileStream fileStream = new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                         {
-                            GXTHandler gxtInstance = new GXTHandler(fileStream);
+                            GxtBinary gxtInstance = new GxtBinary(fileStream);
 
                             for (int i = 0; i < gxtInstance.TextureInfos.Length; i++)
                             {
@@ -98,10 +100,7 @@ namespace GXTConvert
 
                                 SceGxtTextureInfo info = gxtInstance.TextureInfos[i];
 
-                                IndentWriteLine("Texture #{0}: {1}x{2} ({3}, {4})",
-                                    (i + 1),
-                                    info.GetWidth(gxtInstance.Header.Version), info.GetHeight(gxtInstance.Header.Version),
-                                    info.GetTextureFormat(gxtInstance.Header.Version), info.GetTextureType(gxtInstance.Header.Version));
+                                IndentWriteLine("Texture #{0}: {1}x{2} ({3}, {4})", (i + 1), info.GetWidth(), info.GetHeight(), info.GetTextureFormat(), info.GetTextureType());
                                 indent++;
 
                                 if (!outputFile.Directory.Exists) Directory.CreateDirectory(outputFile.Directory.FullName);

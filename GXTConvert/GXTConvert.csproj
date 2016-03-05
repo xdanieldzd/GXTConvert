@@ -46,7 +46,9 @@
   <ItemGroup>
     <Compile Include="Compression\DXTx.cs" />
     <Compile Include="Compression\PVRTC.cs" />
-    <Compile Include="Enums.cs" />
+    <Compile Include="FileFormat\BUV\BUVChunk.cs" />
+    <Compile Include="FileFormat\BUV\BUVEntry.cs" />
+    <Compile Include="FileFormat\Enums.cs" />
     <Compile Include="Exceptions\CommandLineArgsException.cs" />
     <Compile Include="CommandLineTools.cs" />
     <Compile Include="Exceptions\VersionNotImplementedException.cs" />
@@ -54,11 +56,14 @@
     <Compile Include="Exceptions\TypeNotImplementedException.cs" />
     <Compile Include="Exceptions\FormatNotImplementedException.cs" />
     <Compile Include="Exceptions\UnknownMagicException.cs" />
-    <Compile Include="PixelDataProviders.cs" />
-    <Compile Include="PostProcessing.cs" />
+    <Compile Include="FileFormat\SceGxtHeader.cs" />
+    <Compile Include="FileFormat\SceGxtTextureInfo.cs" />
+    <Compile Include="Conversion\PixelDataProviders.cs" />
+    <Compile Include="Conversion\PostProcessing.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="GXTHandler.cs" />
+    <Compile Include="FileFormat\GxtBinary.cs" />
+    <Compile Include="Conversion\TextureBundle.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

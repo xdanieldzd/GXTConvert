@@ -5,7 +5,9 @@ using System.Text;
 using System.IO;
 using System.Drawing.Imaging;
 
-namespace GXTConvert
+using GXTConvert.FileFormat;
+
+namespace GXTConvert.Conversion
 {
     public static class PixelDataProviders
     {
@@ -37,7 +39,7 @@ namespace GXTConvert
             /* P8       */ { SceGxmTextureFormat.P8_ABGR, PixelFormat.Format8bppIndexed },
         };
 
-        public delegate byte[] ProviderFunctionDelegate(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info);
+        public delegate byte[] ProviderFunctionDelegate(BinaryReader reader, SceGxtTextureInfo info);
 
         public static readonly Dictionary<SceGxmTextureFormat, ProviderFunctionDelegate> ProviderFunctions = new Dictionary<SceGxmTextureFormat, ProviderFunctionDelegate>()
         {
@@ -62,22 +64,22 @@ namespace GXTConvert
             { SceGxmTextureFormat.P8_ABGR, new ProviderFunctionDelegate(PixelProviderDirect) },
         };
 
-        private static byte[] PixelProviderDirect(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
+        private static byte[] PixelProviderDirect(BinaryReader reader, SceGxtTextureInfo info)
         {
             return reader.ReadBytes((int)info.DataSize);
         }
 
-        private static byte[] PixelProviderDXTx(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
+        private static byte[] PixelProviderDXTx(BinaryReader reader, SceGxtTextureInfo info)
         {
-            return Compression.DXTx.Decompress(reader, header, info);
+            return Compression.DXTx.Decompress(reader, info);
         }
 
-        private static byte[] PixelProviderPVRTC(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
+        private static byte[] PixelProviderPVRTC(BinaryReader reader, SceGxtTextureInfo info)
         {
-            return Compression.PVRTC.Decompress(reader, header, info);
+            return Compression.PVRTC.Decompress(reader, info);
         }
 
-        private static byte[] PixelProviderU8_1RRR(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
+        private static byte[] PixelProviderU8_1RRR(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 4];
             for (int j = 0; j < pixelData.Length; j += 4)
@@ -88,7 +90,7 @@ namespace GXTConvert
             return pixelData;
         }
 
-        private static byte[] PixelProviderU8_R000(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
+        private static byte[] PixelProviderU8_R000(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 4];
             for (int j = 0; j < pixelData.Length; j += 4)
@@ -99,7 +101,7 @@ namespace GXTConvert
             return pixelData;
         }
 
-        private static byte[] PixelProviderU8U8_RGGG(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
+        private static byte[] PixelProviderU8U8_RGGG(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 4];
             for (int j = 0; j < pixelData.Length; j += 4)
@@ -110,7 +112,7 @@ namespace GXTConvert
             return pixelData;
         }
 
-        private static byte[] PixelProviderU8U8_00GR(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
+        private static byte[] PixelProviderU8U8_00GR(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 4];
             for (int j = 0; j < pixelData.Length; j += 4)
@@ -122,7 +124,7 @@ namespace GXTConvert
             return pixelData;
         }
 
-        private static byte[] PixelProviderU4U4U4U4_ARGB(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
+        private static byte[] PixelProviderU4U4U4U4_ARGB(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 4];
             for (int j = 0; j < pixelData.Length; j += 4)

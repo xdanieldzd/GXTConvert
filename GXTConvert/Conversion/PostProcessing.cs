@@ -5,7 +5,7 @@ using System.Text;
 using System.Drawing;
 using System.Drawing.Imaging;
 
-namespace GXTConvert
+namespace GXTConvert.Conversion
 {
     public static class PostProcessing
     {

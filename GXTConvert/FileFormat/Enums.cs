@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace GXTConvert
+namespace GXTConvert.FileFormat
 {
     // https://github.com/vitasdk/vita-headers/blob/master/include/psp2/gxm.h
 

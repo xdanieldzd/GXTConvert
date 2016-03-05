@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
+using GXTConvert.FileFormat;
+
 namespace GXTConvert.Compression
 {
     /* Ported from PowerVR Graphics Native SDK, Copyright (c) Imagination Technologies Ltd.
@@ -48,15 +50,15 @@ namespace GXTConvert.Compression
     public static class PVRTC
     {
         // Shim function for GXT
-        public static byte[] Decompress(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
+        public static byte[] Decompress(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 8];
 
             PVRTDecompressPVRTC(
                 reader.ReadBytes((int)info.DataSize),
-                (info.GetTextureBaseFormat(header.Version) == SceGxmTextureBaseFormat.PVRT2BPP ? 1 : 0),
-                info.GetWidth(header.Version),
-                info.GetHeight(header.Version),
+                (info.GetTextureBaseFormat() == SceGxmTextureBaseFormat.PVRT2BPP ? 1 : 0),
+                info.GetWidth(),
+                info.GetHeight(),
                 ref pixelData);
 
             return pixelData;

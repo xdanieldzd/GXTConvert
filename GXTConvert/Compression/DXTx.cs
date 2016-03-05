@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
+using GXTConvert.FileFormat;
+
 namespace GXTConvert.Compression
 {
     public static class DXTx
@@ -16,16 +18,16 @@ namespace GXTConvert.Compression
             5, 7, 13, 15
         };
 
-        public static byte[] Decompress(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
+        public static byte[] Decompress(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 8];
 
             int pixelOffset = 0;
-            for (int y = 0; y < info.GetHeight(header.Version); y += 4)
+            for (int y = 0; y < info.GetHeight(); y += 4)
             {
-                for (int x = 0; x < info.GetWidth(header.Version); x += 4)
+                for (int x = 0; x < info.GetWidth(); x += 4)
                 {
-                    byte[] decodedBlock = DecompressDxtBlock(reader, info.GetTextureBaseFormat(header.Version));
+                    byte[] decodedBlock = DecompressDxtBlock(reader, info.GetTextureBaseFormat());
                     for (int b = 0; b < dxtOrder.Length; b++) Buffer.BlockCopy(decodedBlock, b * 4, pixelData, pixelOffset + (dxtOrder[b] * 4), 4);
                     pixelOffset += decodedBlock.Length;
                 }
