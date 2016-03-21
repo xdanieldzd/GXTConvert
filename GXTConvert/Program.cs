@@ -47,7 +47,7 @@ namespace GXTConvert
 
                 args = CommandLineTools.CreateArgs(Environment.CommandLine);
 
-                if (args.Length < 2 || args.Length > 4)
+                if (args.Length < 3 || args.Length > 4)
                     throw new CommandLineArgsException("<input dir> <output dir> [--keep]");
 
                 DirectoryInfo inputDir = new DirectoryInfo(args[1]);
