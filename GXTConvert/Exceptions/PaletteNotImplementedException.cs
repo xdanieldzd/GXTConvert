@@ -9,8 +9,8 @@ namespace GXTConvert.Exceptions
 {
     public class PaletteNotImplementedException : Exception
     {
-        public SceGxmTextureBaseFormat Format { get; private set; }
+        public SceGxmTextureFormat Format { get; private set; }
 
-        public PaletteNotImplementedException(SceGxmTextureBaseFormat format) : base() { this.Format = format; }
+        public PaletteNotImplementedException(SceGxmTextureFormat format) : base() { this.Format = format; }
     }
 }

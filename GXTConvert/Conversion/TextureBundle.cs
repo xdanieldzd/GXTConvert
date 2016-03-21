@@ -18,7 +18,8 @@ namespace GXTConvert.Conversion
         public int Width { get; private set; }
         public int Height { get; private set; }
         public int PaletteIndex { get; private set; }
-        public SceGxmTextureBaseFormat TextureBaseFormat { get; private set; }
+        public int RawLineSize { get; private set; }
+        public SceGxmTextureFormat TextureFormat { get; private set; }
 
         public PixelFormat PixelFormat { get; private set; }
         public byte[] PixelData { get; private set; }
@@ -30,18 +31,19 @@ namespace GXTConvert.Conversion
             Width = info.GetWidth();
             Height = info.GetHeight();
             PaletteIndex = info.PaletteIndex;
-            TextureBaseFormat = info.GetTextureBaseFormat();
+            RawLineSize = (int)(info.DataSize / info.GetHeight());
+            TextureFormat = info.GetTextureFormat();
 
-            SceGxmTextureFormat textureFormat = info.GetTextureFormat();
+            if (!PixelDataProviders.PixelFormatMap.ContainsKey(TextureFormat) || !PixelDataProviders.ProviderFunctions.ContainsKey(TextureFormat))
+                throw new FormatNotImplementedException(TextureFormat);
 
-            if (!PixelDataProviders.PixelFormatMap.ContainsKey(textureFormat) || !PixelDataProviders.ProviderFunctions.ContainsKey(textureFormat))
-                throw new FormatNotImplementedException(textureFormat);
+            PixelFormat = PixelDataProviders.PixelFormatMap[TextureFormat];
+            PixelData = PixelDataProviders.ProviderFunctions[TextureFormat](reader, info);
 
-            PixelFormat = PixelDataProviders.PixelFormatMap[textureFormat];
-            PixelData = PixelDataProviders.ProviderFunctions[textureFormat](reader, info);
+            SceGxmTextureBaseFormat textureBaseFormat = info.GetTextureBaseFormat();
 
             // TODO: is this right? PVRTC doesn't need this, but everything else does?
-            if (TextureBaseFormat != SceGxmTextureBaseFormat.PVRT2BPP && TextureBaseFormat != SceGxmTextureBaseFormat.PVRT4BPP)
+            if (textureBaseFormat != SceGxmTextureBaseFormat.PVRT2BPP && textureBaseFormat != SceGxmTextureBaseFormat.PVRT4BPP)
             {
                 SceGxmTextureType textureType = info.GetTextureType();
                 switch (textureType)
@@ -74,8 +76,15 @@ namespace GXTConvert.Conversion
 
             byte[] pixelsForBmp = new byte[bmpData.Height * bmpData.Stride];
             int bytesPerPixel = (Bitmap.GetPixelFormatSize(PixelFormat) / 8);
+
             for (int y = 0; y < bmpData.Height; y++)
-                Buffer.BlockCopy(PixelData, y * bmpData.Width * bytesPerPixel, pixelsForBmp, y * bmpData.Stride, bmpData.Width * bytesPerPixel);
+            {
+                // TODO: verify this ([RawLineSize] vs the old [bmpData.Width * bytesPerPixel]) doesn't cause issues with other indexed files!
+                int srcOffset = y * (PixelFormat == PixelFormat.Format4bppIndexed || PixelFormat == PixelFormat.Format8bppIndexed ? RawLineSize : bmpData.Width * bytesPerPixel);
+                int dstOffset = y * bmpData.Stride;
+                if (srcOffset >= PixelData.Length || dstOffset >= pixelsForBmp.Length) continue;
+                Buffer.BlockCopy(PixelData, srcOffset, pixelsForBmp, dstOffset, (PixelFormat == PixelFormat.Format4bppIndexed ? bmpData.Width / 2 : bmpData.Width * bytesPerPixel));
+            }
 
             Marshal.Copy(pixelsForBmp, 0, bmpData.Scan0, pixelsForBmp.Length);
             texture.UnlockBits(bmpData);

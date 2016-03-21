@@ -23,8 +23,8 @@ namespace GXTConvert.FileFormat
 
         public BUVChunk BUVChunk { get; private set; }
 
-        public Color[][] P4Palettes { get; private set; }
-        public Color[][] P8Palettes { get; private set; }
+        public uint[][] P4Palettes { get; private set; }
+        public uint[][] P8Palettes { get; private set; }
 
         public TextureBundle[] TextureBundles { get; private set; }
 
@@ -55,7 +55,7 @@ namespace GXTConvert.FileFormat
                 BUVChunk = new BUVChunk(stream);
             }
 
-            ReadAllPalettes(reader);
+            ReadAllBasePalettes(reader);
             ReadAllTextures(reader);
 
             if (BUVChunk != null)
@@ -67,7 +67,7 @@ namespace GXTConvert.FileFormat
                 for (int i = 0; i < BUVTextures.Length; i++)
                 {
                     BUVEntry entry = BUVChunk.Entries[i];
-                    using (Bitmap sourceImage = bundle.CreateTexture(FetchPalette(bundle.TextureBaseFormat, entry.PaletteIndex)))
+                    using (Bitmap sourceImage = bundle.CreateTexture(FetchPalette(bundle.TextureFormat, entry.PaletteIndex)))
                     {
                         BUVTextures[i] = sourceImage.Clone(new Rectangle(entry.X, entry.Y, entry.Width, entry.Height), sourceImage.PixelFormat);
                     }
@@ -75,16 +75,16 @@ namespace GXTConvert.FileFormat
             }
         }
 
-        private void ReadAllPalettes(BinaryReader reader)
+        private void ReadAllBasePalettes(BinaryReader reader)
         {
             long paletteOffset = reader.BaseStream.Length - (((Header.NumP8Palettes * 256) * 4) + ((Header.NumP4Palettes * 16) * 4));
             reader.BaseStream.Seek(paletteOffset, SeekOrigin.Begin);
 
-            P4Palettes = new Color[Header.NumP4Palettes][];
-            for (int i = 0; i < P4Palettes.Length; i++) P4Palettes[i] = ReadPalette(reader, 16);
+            P4Palettes = new uint[Header.NumP4Palettes][];
+            for (int i = 0; i < P4Palettes.Length; i++) P4Palettes[i] = ReadBasePalette(reader, 16);
 
-            P8Palettes = new Color[Header.NumP8Palettes][];
-            for (int i = 0; i < P8Palettes.Length; i++) P8Palettes[i] = ReadPalette(reader, 256);
+            P8Palettes = new uint[Header.NumP8Palettes][];
+            for (int i = 0; i < P8Palettes.Length; i++) P8Palettes[i] = ReadBasePalette(reader, 256);
         }
 
         private void ReadAllTextures(BinaryReader reader)
@@ -95,33 +95,53 @@ namespace GXTConvert.FileFormat
             for (int i = 0; i < TextureInfos.Length; i++)
             {
                 TextureBundle bundle = (TextureBundles[i] = new TextureBundle(reader, Header, TextureInfos[i]));
-                Textures[i] = bundle.CreateTexture(FetchPalette(bundle.TextureBaseFormat, bundle.PaletteIndex));
+                Textures[i] = bundle.CreateTexture(FetchPalette(bundle.TextureFormat, bundle.PaletteIndex));
             }
         }
 
-        private Color[] ReadPalette(BinaryReader reader, int numColor)
+        private uint[] ReadBasePalette(BinaryReader reader, int numColor)
         {
-            Color[] palette = new Color[numColor];
-            byte r, g, b, a;
-            for (int i = 0; i < palette.Length; i++)
-            {
-                r = reader.ReadByte(); g = reader.ReadByte(); b = reader.ReadByte(); a = reader.ReadByte();
-                palette[i] = Color.FromArgb(a, r, g, b);
-            }
+            uint[] palette = new uint[numColor];
+            for (int i = 0; i < palette.Length; i++) palette[i] = reader.ReadUInt32();
             return palette;
         }
 
-        private Color[] FetchPalette(SceGxmTextureBaseFormat textureBaseFormat, int paletteIndex)
+        private Color[] CreatePalette(uint[] inputPalette, Func<byte, byte, byte, byte, Color> arrangerAbgr)
+        {
+            Color[] outputPalette = new Color[inputPalette.Length];
+            for (int i = 0; i < outputPalette.Length; i++)
+                outputPalette[i] = arrangerAbgr((byte)(inputPalette[i] >> 24), (byte)(inputPalette[i] >> 0), (byte)(inputPalette[i] >> 8), (byte)(inputPalette[i] >> 16));
+            return outputPalette;
+        }
+
+        private Color[] FetchPalette(SceGxmTextureFormat textureFormat, int paletteIndex)
         {
             if (paletteIndex == -1) return null;
 
             Color[] palette;
-            switch (textureBaseFormat)
+            switch (textureFormat)
             {
-                case SceGxmTextureBaseFormat.P4: palette = P4Palettes[paletteIndex]; break;
-                case SceGxmTextureBaseFormat.P8: palette = P8Palettes[paletteIndex]; break;
-                default: throw new PaletteNotImplementedException(textureBaseFormat);
+                case SceGxmTextureFormat.P4_ABGR: palette = CreatePalette(P4Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(a, b, g, r); })); break;
+                case SceGxmTextureFormat.P4_ARGB: palette = CreatePalette(P4Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(a, r, g, b); })); break;
+                case SceGxmTextureFormat.P4_RGBA: palette = CreatePalette(P4Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(r, g, b, a); })); break;
+                case SceGxmTextureFormat.P4_BGRA: palette = CreatePalette(P4Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(b, g, r, a); })); break;
+                case SceGxmTextureFormat.P4_1BGR: palette = CreatePalette(P4Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(0xFF, b, g, r); })); break;
+                case SceGxmTextureFormat.P4_1RGB: palette = CreatePalette(P4Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(0xFF, r, g, b); })); break;
+                case SceGxmTextureFormat.P4_RGB1: palette = CreatePalette(P4Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(r, g, b, 0xFF); })); break;
+                case SceGxmTextureFormat.P4_BGR1: palette = CreatePalette(P4Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(b, g, r, 0xFF); })); break;
+
+                case SceGxmTextureFormat.P8_ABGR: palette = CreatePalette(P8Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(a, b, g, r); })); break;
+                case SceGxmTextureFormat.P8_ARGB: palette = CreatePalette(P8Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(a, r, g, b); })); break;
+                case SceGxmTextureFormat.P8_RGBA: palette = CreatePalette(P8Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(r, g, b, a); })); break;
+                case SceGxmTextureFormat.P8_BGRA: palette = CreatePalette(P8Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(b, g, r, a); })); break;
+                case SceGxmTextureFormat.P8_1BGR: palette = CreatePalette(P8Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(0xFF, b, g, r); })); break;
+                case SceGxmTextureFormat.P8_1RGB: palette = CreatePalette(P8Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(0xFF, r, g, b); })); break;
+                case SceGxmTextureFormat.P8_RGB1: palette = CreatePalette(P8Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(r, g, b, 0xFF); })); break;
+                case SceGxmTextureFormat.P8_BGR1: palette = CreatePalette(P8Palettes[paletteIndex], ((a, b, g, r) => { return Color.FromArgb(b, g, r, 0xFF); })); break;
+
+                default: throw new PaletteNotImplementedException(textureFormat);
             }
+
             return palette;
         }
     }

@@ -36,7 +36,21 @@ namespace GXTConvert.Conversion
             /* RGB888   */ { SceGxmTextureFormat.U8U8U8_RGB, PixelFormat.Format24bppRgb },
             /* RGB888X  */ { SceGxmTextureFormat.U8U8U8X8_RGB1, PixelFormat.Format32bppRgb },
             /* P4       */ { SceGxmTextureFormat.P4_ABGR, PixelFormat.Format4bppIndexed },
+            /*          */ { SceGxmTextureFormat.P4_ARGB, PixelFormat.Format4bppIndexed },
+            /*          */ { SceGxmTextureFormat.P4_RGBA, PixelFormat.Format4bppIndexed },
+            /*          */ { SceGxmTextureFormat.P4_BGRA, PixelFormat.Format4bppIndexed },
+            /*          */ { SceGxmTextureFormat.P4_1BGR, PixelFormat.Format4bppIndexed },
+            /*          */ { SceGxmTextureFormat.P4_1RGB, PixelFormat.Format4bppIndexed },
+            /*          */ { SceGxmTextureFormat.P4_RGB1, PixelFormat.Format4bppIndexed },
+            /*          */ { SceGxmTextureFormat.P4_BGR1, PixelFormat.Format4bppIndexed },
             /* P8       */ { SceGxmTextureFormat.P8_ABGR, PixelFormat.Format8bppIndexed },
+            /*          */ { SceGxmTextureFormat.P8_ARGB, PixelFormat.Format8bppIndexed },
+            /*          */ { SceGxmTextureFormat.P8_RGBA, PixelFormat.Format8bppIndexed },
+            /*          */ { SceGxmTextureFormat.P8_BGRA, PixelFormat.Format8bppIndexed },
+            /*          */ { SceGxmTextureFormat.P8_1BGR, PixelFormat.Format8bppIndexed },
+            /*          */ { SceGxmTextureFormat.P8_1RGB, PixelFormat.Format8bppIndexed },
+            /*          */ { SceGxmTextureFormat.P8_RGB1, PixelFormat.Format8bppIndexed },
+            /*          */ { SceGxmTextureFormat.P8_BGR1, PixelFormat.Format8bppIndexed },
         };
 
         public delegate byte[] ProviderFunctionDelegate(BinaryReader reader, SceGxtTextureInfo info);
@@ -60,8 +74,22 @@ namespace GXTConvert.Conversion
             //{ SceGxmTextureFormat.PVRT4BPP_1BGR, new ProviderFunctionDelegate(PixelProviderPVRTC) },
             { SceGxmTextureFormat.U8U8U8_RGB, new ProviderFunctionDelegate(PixelProviderDirect) },
             { SceGxmTextureFormat.U8U8U8X8_RGB1, new ProviderFunctionDelegate(PixelProviderDirect) },
-            { SceGxmTextureFormat.P4_ABGR, new ProviderFunctionDelegate(PixelProviderDirect) }, // TODO: verify me!
+            { SceGxmTextureFormat.P4_ABGR, new ProviderFunctionDelegate(PixelProviderP4) }, // TODO: verify ALL these once files or bug reports come in!
+            { SceGxmTextureFormat.P4_ARGB, new ProviderFunctionDelegate(PixelProviderP4) },
+            { SceGxmTextureFormat.P4_RGBA, new ProviderFunctionDelegate(PixelProviderP4) },
+            { SceGxmTextureFormat.P4_BGRA, new ProviderFunctionDelegate(PixelProviderP4) },
+            { SceGxmTextureFormat.P4_1BGR, new ProviderFunctionDelegate(PixelProviderP4) },
+            { SceGxmTextureFormat.P4_1RGB, new ProviderFunctionDelegate(PixelProviderP4) },
+            { SceGxmTextureFormat.P4_RGB1, new ProviderFunctionDelegate(PixelProviderP4) },
+            { SceGxmTextureFormat.P4_BGR1, new ProviderFunctionDelegate(PixelProviderP4) },
             { SceGxmTextureFormat.P8_ABGR, new ProviderFunctionDelegate(PixelProviderDirect) },
+            { SceGxmTextureFormat.P8_ARGB, new ProviderFunctionDelegate(PixelProviderDirect) },
+            { SceGxmTextureFormat.P8_RGBA, new ProviderFunctionDelegate(PixelProviderDirect) },
+            { SceGxmTextureFormat.P8_BGRA, new ProviderFunctionDelegate(PixelProviderDirect) },
+            { SceGxmTextureFormat.P8_1BGR, new ProviderFunctionDelegate(PixelProviderDirect) },
+            { SceGxmTextureFormat.P8_1RGB, new ProviderFunctionDelegate(PixelProviderDirect) },
+            { SceGxmTextureFormat.P8_RGB1, new ProviderFunctionDelegate(PixelProviderDirect) },
+            { SceGxmTextureFormat.P8_BGR1, new ProviderFunctionDelegate(PixelProviderDirect) },
         };
 
         private static byte[] PixelProviderDirect(BinaryReader reader, SceGxtTextureInfo info)
@@ -79,13 +107,24 @@ namespace GXTConvert.Conversion
             return Compression.PVRTC.Decompress(reader, info);
         }
 
+        private static byte[] PixelProviderP4(BinaryReader reader, SceGxtTextureInfo info)
+        {
+            byte[] pixelData = new byte[info.DataSize];
+            for (int i = 0; i < pixelData.Length; i++)
+            {
+                byte idx = reader.ReadByte();
+                pixelData[i] = (byte)(idx >> 4 | idx << 4);
+            }
+            return pixelData;
+        }
+
         private static byte[] PixelProviderU8_1RRR(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 4];
-            for (int j = 0; j < pixelData.Length; j += 4)
+            for (int i = 0; i < pixelData.Length; i += 4)
             {
-                pixelData[j + 0] = pixelData[j + 1] = pixelData[j + 2] = reader.ReadByte();
-                pixelData[j + 3] = 0xFF;
+                pixelData[i + 0] = pixelData[i + 1] = pixelData[i + 2] = reader.ReadByte();
+                pixelData[i + 3] = 0xFF;
             };
             return pixelData;
         }
@@ -93,10 +132,10 @@ namespace GXTConvert.Conversion
         private static byte[] PixelProviderU8_R000(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 4];
-            for (int j = 0; j < pixelData.Length; j += 4)
+            for (int i = 0; i < pixelData.Length; i += 4)
             {
-                pixelData[j + 0] = pixelData[j + 1] = pixelData[j + 2] = 0x00;
-                pixelData[j + 3] = reader.ReadByte();
+                pixelData[i + 0] = pixelData[i + 1] = pixelData[i + 2] = 0x00;
+                pixelData[i + 3] = reader.ReadByte();
             };
             return pixelData;
         }
@@ -104,10 +143,10 @@ namespace GXTConvert.Conversion
         private static byte[] PixelProviderU8U8_RGGG(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 4];
-            for (int j = 0; j < pixelData.Length; j += 4)
+            for (int i = 0; i < pixelData.Length; i += 4)
             {
-                pixelData[j + 3] = reader.ReadByte();
-                pixelData[j + 0] = pixelData[j + 1] = pixelData[j + 2] = reader.ReadByte();
+                pixelData[i + 3] = reader.ReadByte();
+                pixelData[i + 0] = pixelData[i + 1] = pixelData[i + 2] = reader.ReadByte();
             };
             return pixelData;
         }
@@ -115,11 +154,11 @@ namespace GXTConvert.Conversion
         private static byte[] PixelProviderU8U8_00GR(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 4];
-            for (int j = 0; j < pixelData.Length; j += 4)
+            for (int i = 0; i < pixelData.Length; i += 4)
             {
-                pixelData[j + 1] = reader.ReadByte();
-                pixelData[j + 2] = reader.ReadByte();
-                pixelData[j + 0] = pixelData[j + 3] = 0x00;
+                pixelData[i + 1] = reader.ReadByte();
+                pixelData[i + 2] = reader.ReadByte();
+                pixelData[i + 0] = pixelData[i + 3] = 0x00;
             };
             return pixelData;
         }
@@ -127,13 +166,13 @@ namespace GXTConvert.Conversion
         private static byte[] PixelProviderU4U4U4U4_ARGB(BinaryReader reader, SceGxtTextureInfo info)
         {
             byte[] pixelData = new byte[info.DataSize * 4];
-            for (int j = 0; j < pixelData.Length; j += 4)
+            for (int i = 0; i < pixelData.Length; i += 4)
             {
                 ushort rgba = reader.ReadUInt16();
-                pixelData[j + 0] = (byte)(((rgba >> 4) << 4) & 0xFF);
-                pixelData[j + 1] = (byte)(((rgba >> 8) << 4) & 0xFF);
-                pixelData[j + 2] = (byte)(((rgba >> 12) << 4) & 0xFF);
-                pixelData[j + 3] = (byte)((rgba << 4) & 0xFF);
+                pixelData[i + 0] = (byte)(((rgba >> 4) << 4) & 0xFF);
+                pixelData[i + 1] = (byte)(((rgba >> 8) << 4) & 0xFF);
+                pixelData[i + 2] = (byte)(((rgba >> 12) << 4) & 0xFF);
+                pixelData[i + 3] = (byte)((rgba << 4) & 0xFF);
             };
             return pixelData;
         }
