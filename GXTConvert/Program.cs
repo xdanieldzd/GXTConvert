@@ -16,12 +16,15 @@ namespace GXTConvert
     class Program
     {
         static char[] directorySeparators = new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+        static string defaultOutputDir = "(converted)";
 
         static int indent = 0, baseIndent = 0;
         static bool keepFiles = false;
+        static DirectoryInfo globalOutputDir = null;
 
         static void Main(string[] args)
         {
+            //old
             // "E:\[SSD User Data]\Downloads\GXT\GXT" "E:\[SSD User Data]\Downloads\GXT\__output__\ALL" -k
             // "E:\[SSD User Data]\Downloads\GXT\__test__\" "E:\[SSD User Data]\Downloads\GXT\__output__\__test__\" -k
 
@@ -45,117 +48,85 @@ namespace GXTConvert
                 IndentWriteLine("------------------------------------------------------------------");
                 IndentWriteLine();
 
+                // "E:\[SSD User Data]\Downloads\GXTSamples(1)\GXTSamples\" "E:\[SSD User Data]\Downloads\GXTSamples(1)\GXTSamples\P4_ARGB\bin_tokuten_l_0000000F.gxt" bad-file-test "E:\[SSD User Data]\Downloads\GXTSamples(1)\GXTSamples\P4_ARGB\bin_tokuten_l_00000010.gxt" --badarg --output "E:\[SSD User Data]\Downloads\GXTSamples(1)\__output__"
+
                 args = CommandLineTools.CreateArgs(Environment.CommandLine);
 
-                if (args.Length < 3 || args.Length > 4)
-                    throw new CommandLineArgsException("<input dir> <output dir> [--keep]");
+                if (args.Length < 2)
+                    throw new CommandLineArgsException("<input ...> [--keep | --output <directory>]");
 
-                DirectoryInfo inputDir = new DirectoryInfo(args[1]);
-                DirectoryInfo outputDir = new DirectoryInfo(args[2]);
+                List<DirectoryInfo> inputDirs = new List<DirectoryInfo>();
+                List<FileInfo> inputFiles = new List<FileInfo>();
 
-                string[] options = args.Skip(3).ToArray();
-                keepFiles = (options.Contains("--keep") || options.Contains("-k"));
-
-                if (!inputDir.Exists) throw new DirectoryNotFoundException("Input directory not found");
-                if (!outputDir.Exists) Directory.CreateDirectory(outputDir.FullName);
-
-                IndentWriteLine("Parsing directory '{0}'...", inputDir.Name);
-
-                IEnumerable<FileInfo> files = inputDir.EnumerateFiles("*", SearchOption.AllDirectories);
-
-                IndentWriteLine("Found {0} file(s).", files.Count());
-                IndentWriteLine();
-
-                baseIndent = indent++;
-
-                foreach (FileInfo inputFile in files.Where(x => !IsSubdirectory(x.Directory, outputDir)))
+                for (int i = 1; i < args.Length; i++)
                 {
-                    try
+                    DirectoryInfo directory = new DirectoryInfo(args[i]);
+                    if (directory.Exists)
                     {
-                        string displayPath = inputFile.FullName.Replace(inputDir.FullName, string.Empty).TrimStart(directorySeparators);
-                        IndentWriteLine("File '{0}'... ", displayPath);
+                        IEnumerable<FileInfo> files = directory.EnumerateFiles("*", SearchOption.AllDirectories).Where(x => x.Extension != ".png");
+                        IndentWriteLine("Adding directory '{0}', {1} file(s) found...", directory.Name, files.Count());
+                        inputDirs.Add(directory);
+                        continue;
+                    }
+
+                    FileInfo file = new FileInfo(args[i]);
+                    if (file.Exists)
+                    {
+                        IndentWriteLine("Adding file '{0}'...", file.Name);
+                        inputFiles.Add(file);
+                        continue;
+                    }
+
+                    if (args[i].StartsWith("-"))
+                    {
+                        switch (args[i].TrimStart('-'))
+                        {
+                            case "k":
+                            case "keep":
+                                keepFiles = true;
+                                break;
+
+                            case "o":
+                            case "output":
+                                globalOutputDir = new DirectoryInfo(args[++i]);
+                                break;
+
+                            default:
+                                IndentWriteLine("Unknown argument '{0}'.", args[i]);
+                                break;
+                        }
+                        continue;
+                    }
+
+                    IndentWriteLine("File or directory '{0}' not found.", args[i]);
+                }
+
+                if (inputDirs.Count > 0)
+                {
+                    foreach (DirectoryInfo inputDir in inputDirs)
+                    {
+                        IndentWriteLine();
+                        IndentWriteLine("Parsing directory '{0}'...", inputDir.Name);
                         baseIndent = indent++;
 
-                        string relativeDirectory = inputFile.DirectoryName.TrimEnd(directorySeparators).Replace(inputDir.FullName.TrimEnd(directorySeparators), string.Empty).TrimStart(directorySeparators);
+                        DirectoryInfo outputDir = (globalOutputDir != null ? globalOutputDir : new DirectoryInfo(inputDir.FullName + " " + defaultOutputDir));
+                        foreach (FileInfo inputFile in inputDir.EnumerateFiles("*", SearchOption.AllDirectories).Where(x => x.Extension != ".png" && !IsSubdirectory(x.Directory, outputDir)))
+                            ProcessInputFile(inputFile, inputDir, outputDir);
 
-                        if (keepFiles)
-                        {
-                            string existenceCheckPath = Path.Combine(outputDir.FullName, relativeDirectory);
-                            string existenceCheckPattern = Path.GetFileNameWithoutExtension(inputFile.Name) + "*";
-                            if (Directory.Exists(existenceCheckPath) && Directory.EnumerateFiles(existenceCheckPath, existenceCheckPattern).Any())
-                            {
-                                IndentWriteLine("Already exists.");
-                                continue;
-                            }
-                        }
-
-                        using (FileStream fileStream = new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                        {
-                            GxtBinary gxtInstance = new GxtBinary(fileStream);
-
-                            for (int i = 0; i < gxtInstance.TextureInfos.Length; i++)
-                            {
-                                string outputFilename = string.Format("{0} (Texture {1}).png", Path.GetFileNameWithoutExtension(inputFile.Name), i);
-                                FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
-
-                                SceGxtTextureInfo info = gxtInstance.TextureInfos[i];
-
-                                IndentWriteLine("Texture #{0}: {1}x{2} ({3}, {4})", (i + 1), info.GetWidth(), info.GetHeight(), info.GetTextureFormat(), info.GetTextureType());
-                                indent++;
-
-                                if (!outputFile.Directory.Exists) Directory.CreateDirectory(outputFile.Directory.FullName);
-                                gxtInstance.Textures[i].Save(outputFile.FullName, System.Drawing.Imaging.ImageFormat.Png);
-
-                                indent--;
-                            }
-
-                            if (gxtInstance.BUVChunk != null)
-                            {
-                                indent++;
-                                for (int i = 0; i < gxtInstance.BUVTextures.Length; i++)
-                                {
-                                    string outputFilename = string.Format("{0} (Block {1}).png", Path.GetFileNameWithoutExtension(inputFile.Name), i);
-                                    FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
-
-                                    BUVEntry entry = gxtInstance.BUVChunk.Entries[i];
-
-                                    IndentWriteLine("Block #{0}: {1}x{2} (Origin X:{3}, Y:{4})", (i + 1), entry.Width, entry.Height, entry.X, entry.Y);
-                                    indent++;
-
-                                    if (!outputFile.Directory.Exists) Directory.CreateDirectory(outputFile.Directory.FullName);
-                                    gxtInstance.BUVTextures[i].Save(outputFile.FullName, System.Drawing.Imaging.ImageFormat.Png);
-
-                                    indent--;
-                                }
-                                indent--;
-                            }
-                        }
+                        indent--;
                     }
-#if !DEBUG
-                    catch (FormatNotImplementedException fniEx)
+                }
+
+                if (inputFiles.Count > 0)
+                {
+                    IndentWriteLine();
+                    IndentWriteLine("Parsing files...");
+                    baseIndent = indent++;
+
+                    foreach (FileInfo inputFile in inputFiles)
                     {
-                        IndentWriteLine("Format '{0}' not implemented.", fniEx.Format);
-                    }
-                    catch (PaletteNotImplementedException pniEx)
-                    {
-                        IndentWriteLine("Palette '{0}' not implemented.", pniEx.Format);
-                    }
-                    catch (TypeNotImplementedException tniEx)
-                    {
-                        IndentWriteLine("Type '{0}' not implemented.", tniEx.Type);
-                    }
-                    catch (UnknownMagicException umEx)
-                    {
-                        IndentWriteLine("Unknown magic number: {0}.", umEx.Message);
-                    }
-                    catch (Exception ex)
-                    {
-                        IndentWriteLine("Exception occured: {0}.", ex.Message);
-                    }
-#endif
-                    finally
-                    {
-                        indent = baseIndent;
+                        DirectoryInfo outputDir = (globalOutputDir != null ? globalOutputDir : inputFile.Directory);
+                        ProcessInputFile(inputFile, inputFile.Directory, outputDir);
                     }
                 }
             }
@@ -180,6 +151,99 @@ namespace GXTConvert
                 IndentWriteLine();
                 IndentWriteLine("Press any key to exit.");
                 Console.ReadKey();
+            }
+        }
+
+        private static void ProcessInputFile(FileInfo inputFile, DirectoryInfo inputDir, DirectoryInfo outputDir)
+        {
+            try
+            {
+                if (!outputDir.Exists) Directory.CreateDirectory(outputDir.FullName);
+
+                string displayPath = inputFile.FullName.Replace(inputDir.FullName, string.Empty).TrimStart(directorySeparators);
+                IndentWriteLine("File '{0}'... ", displayPath);
+                baseIndent = indent++;
+
+                string relativeDirectory = inputFile.DirectoryName.TrimEnd(directorySeparators).Replace(inputDir.FullName.TrimEnd(directorySeparators), string.Empty).TrimStart(directorySeparators);
+
+                if (keepFiles)
+                {
+                    string existenceCheckPath = Path.Combine(outputDir.FullName, relativeDirectory);
+                    string existenceCheckPattern = Path.GetFileNameWithoutExtension(inputFile.Name) + "*";
+                    if (Directory.Exists(existenceCheckPath) && Directory.EnumerateFiles(existenceCheckPath, existenceCheckPattern).Any())
+                    {
+                        IndentWriteLine("Already exists.");
+                        return;
+                    }
+                }
+
+                using (FileStream fileStream = new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    GxtBinary gxtInstance = new GxtBinary(fileStream);
+
+                    for (int i = 0; i < gxtInstance.TextureInfos.Length; i++)
+                    {
+                        string outputFilename = string.Format("{0} (Texture {1}).png", Path.GetFileNameWithoutExtension(inputFile.Name), i);
+                        FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
+
+                        SceGxtTextureInfo info = gxtInstance.TextureInfos[i];
+
+                        IndentWriteLine("Texture #{0}: {1}x{2} ({3}, {4})", (i + 1), info.GetWidth(), info.GetHeight(), info.GetTextureFormat(), info.GetTextureType());
+                        indent++;
+
+                        if (!outputFile.Directory.Exists) Directory.CreateDirectory(outputFile.Directory.FullName);
+                        gxtInstance.Textures[i].Save(outputFile.FullName, System.Drawing.Imaging.ImageFormat.Png);
+
+                        indent--;
+                    }
+
+                    if (gxtInstance.BUVChunk != null)
+                    {
+                        indent++;
+                        for (int i = 0; i < gxtInstance.BUVTextures.Length; i++)
+                        {
+                            string outputFilename = string.Format("{0} (Block {1}).png", Path.GetFileNameWithoutExtension(inputFile.Name), i);
+                            FileInfo outputFile = new FileInfo(Path.Combine(outputDir.FullName, relativeDirectory, outputFilename));
+
+                            BUVEntry entry = gxtInstance.BUVChunk.Entries[i];
+
+                            IndentWriteLine("Block #{0}: {1}x{2} (Origin X:{3}, Y:{4})", (i + 1), entry.Width, entry.Height, entry.X, entry.Y);
+                            indent++;
+
+                            if (!outputFile.Directory.Exists) Directory.CreateDirectory(outputFile.Directory.FullName);
+                            gxtInstance.BUVTextures[i].Save(outputFile.FullName, System.Drawing.Imaging.ImageFormat.Png);
+
+                            indent--;
+                        }
+                        indent--;
+                    }
+                }
+            }
+#if !DEBUG
+            catch (FormatNotImplementedException fniEx)
+            {
+                IndentWriteLine("Format '{0}' not implemented.", fniEx.Format);
+            }
+            catch (PaletteNotImplementedException pniEx)
+            {
+                IndentWriteLine("Palette '{0}' not implemented.", pniEx.Format);
+            }
+            catch (TypeNotImplementedException tniEx)
+            {
+                IndentWriteLine("Type '{0}' not implemented.", tniEx.Type);
+            }
+            catch (UnknownMagicException umEx)
+            {
+                IndentWriteLine("Unknown magic number: {0}.", umEx.Message);
+            }
+            catch (Exception ex)
+            {
+                IndentWriteLine("Exception occured: {0}.", ex.Message);
+            }
+#endif
+            finally
+            {
+                indent = baseIndent;
             }
         }
 
