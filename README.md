@@ -13,10 +13,13 @@ Requirements
 
 Usage
 =====
-Syntax: `GXTConvert.exe <input directory> <output directory> [options]`
-* `--keep | -k`: Do not overwrite existing output files
+Syntax: `GXTConvert.exe <inputs ...> [options]`
+* `<inputs ...>`: Any number of files or directories to be converted, separated by spaces
+* `[options]`:
+ * `--output | -o`: Specify output directory
+ * `--keep | -k`: Do not overwrite existing output files
 
-Example: `GXTConvert.exe "C:\Temp\GXT\files" "C:\Temp\GXT\output"`
+Example: `GXTConvert.exe "C:\Temp\GXT\files\" "C:\Temp\GXT\testfile.gxt" --output "C:\Temp\GXT\output\"`
 
 Acknowledgements
 ================
