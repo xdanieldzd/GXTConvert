@@ -24,15 +24,15 @@ Example: `GXTConvert.exe "C:\Temp\GXT\files\" "C:\Temp\GXT\testfile.gxt" --outpu
 Games
 =====
 Games known to use the GXT format include:
-* Danganronpa: Trigger Happy Havoc <sup>(1)</sup>
-* Danganronpa 2: Goodbye Despair <sup>(1)</sup>
-* Danganronpa Another Episode: Ultra Despair Girls (*.btx) <sup>(1)</sup>
-* Digimon Story: Cyber Sleuth (*.pvr)
-* Sword Art Online: Hollow Fragment <sup>(2)</sup>
-* Senran Kagura: Shinovi Versus (*.gxt)
-* Soul Sacrifice Delta
+* Danganronpa: Trigger Happy Havoc _(*.gxt)_ <sup>(1)</sup>
+* Danganronpa 2: Goodbye Despair _(*.gxt)_ <sup>(1)</sup>
+* Danganronpa Another Episode: Ultra Despair Girls _(*.btx)_ <sup>(1)</sup>
+* Digimon Story: Cyber Sleuth _(*.pvr)_
+* Sword Art Online: Hollow Fragment _(no extension)_ <sup>(2)</sup>
+* Senran Kagura: Shinovi Versus _(*.gxt)_
+* Soul Sacrifice Delta _(*.gxt)_
 
-<sup>(1)</sup> Might require [dr_dec decompression script by BlackDragonHunt](https://github.com/BlackDragonHunt/Danganronpa-Tools)  
+<sup>(1)</sup> Require [dr_dec decompression script by BlackDragonHunt](https://github.com/BlackDragonHunt/Danganronpa-Tools) for most files; some .btx files are _not_ GXT  
 <sup>(2)</sup> Requires QuickBMS script to unpack OFS3 containers
 
 Acknowledgements
