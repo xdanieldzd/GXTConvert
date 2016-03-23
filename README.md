@@ -21,6 +21,20 @@ Syntax: `GXTConvert.exe <inputs ...> [options]`
 
 Example: `GXTConvert.exe "C:\Temp\GXT\files\" "C:\Temp\GXT\testfile.gxt" --output "C:\Temp\GXT\output\"`
 
+Games
+=====
+Games known to use the GXT format include:
+* Danganronpa: Trigger Happy Havoc <sup>(1)</sup>
+* Danganronpa 2: Goodbye Despair <sup>(1)</sup>
+* Danganronpa Another Episode: Ultra Despair Girls (*.btx) <sup>(1)</sup>
+* Digimon Story: Cyber Sleuth (*.pvr)
+* Sword Art Online: Hollow Fragment <sup>(2)</sup>
+* Senran Kagura: Shinovi Versus (*.gxt)
+* Soul Sacrifice Delta
+
+<sup>(1)</sup> Might require [dr_dec decompression script by BlackDragonHunt](https://github.com/BlackDragonHunt/Danganronpa-Tools)  
+<sup>(2)</sup> Requires QuickBMS script to unpack OFS3 containers
+
 Acknowledgements
 ================
 * PVRTC texture decompression code ported from [PowerVR Graphics Native SDK](https://github.com/powervr-graphics/Native_SDK), Copyright (c) Imagination Technologies Ltd.
