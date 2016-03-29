@@ -37,16 +37,21 @@ namespace GXTConvert.FileFormat
 
             Header = new SceGxtHeader(stream);
 
+            Func<Stream, SceGxtTextureInfo> textureInfoGeneratorFunc;
+            switch (Header.Version)
+            {
+                case 0x10000003: textureInfoGeneratorFunc = new Func<Stream, SceGxtTextureInfo>((s) => { return new SceGxtTextureInfoV301(s); }); break;
+                //case 0x10000002: textureInfoGeneratorFunc = new Func<Stream, SceGxtTextureInfo>((s) => { return new SceGxtTextureInfoV201(s); }); break;
+                //case 0x10000001: textureInfoGeneratorFunc = new Func<Stream, SceGxtTextureInfo>((s) => { return new SceGxtTextureInfoV101(s); }); break;
+                default: throw new VersionNotImplementedException(Header.Version);
+                // TODO: re-add v2 and v1 once they're understood
+            }
+
             TextureInfos = new SceGxtTextureInfo[Header.NumTextures];
             for (int i = 0; i < TextureInfos.Length; i++)
             {
-                switch (Header.Version)
-                {
-                    case 0x10000003: TextureInfos[i] = new SceGxtTextureInfoV301(stream); break;
-                    case 0x10000002: TextureInfos[i] = new SceGxtTextureInfoV201(stream); break;
-                    case 0x10000001: TextureInfos[i] = new SceGxtTextureInfoV101(stream); break;
-                    default: throw new VersionNotImplementedException(Header.Version);
-                }
+                if (textureInfoGeneratorFunc != null)
+                    TextureInfos[i] = textureInfoGeneratorFunc(stream);
             }
 
             // TODO: any other way to detect these?
@@ -78,7 +83,7 @@ namespace GXTConvert.FileFormat
 
         private void ReadAllBasePalettes(BinaryReader reader)
         {
-            long paletteOffset = reader.BaseStream.Length - (((Header.NumP8Palettes * 256) * 4) + ((Header.NumP4Palettes * 16) * 4));
+            long paletteOffset = (Header.TextureDataOffset + Header.TextureDataSize) - (((Header.NumP8Palettes * 256) * 4) + ((Header.NumP4Palettes * 16) * 4));
             reader.BaseStream.Seek(paletteOffset, SeekOrigin.Begin);
 
             P4Palettes = new uint[Header.NumP4Palettes][];

@@ -220,6 +220,10 @@ namespace GXTConvert
                 }
             }
 #if !DEBUG
+            catch (VersionNotImplementedException vniEx)
+            {
+                IndentWriteLine("GXT version {0:D2} (0x{1:X8}) not implemented.", (vniEx.Version & 0xFFFF), vniEx.Version);
+            }
             catch (FormatNotImplementedException fniEx)
             {
                 IndentWriteLine("Format '{0}' not implemented.", fniEx.Format);
