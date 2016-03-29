@@ -13,10 +13,27 @@ Requirements
 
 Usage
 =====
-Syntax: `GXTConvert.exe <input directory> <output directory> [options]`
-* `--keep | -k`: Do not overwrite existing output files
+Syntax: `GXTConvert.exe <inputs ...> [options]`
+* `<inputs ...>`: Any number of files or directories to be converted, separated by spaces
+* `[options]`:
+ * `--output | -o`: Specify output directory
+ * `--keep | -k`: Do not overwrite existing output files
 
-Example: `GXTConvert.exe "C:\Temp\GXT\files" "C:\Temp\GXT\output"`
+Example: `GXTConvert.exe "C:\Temp\GXT\files\" "C:\Temp\GXT\testfile.gxt" --output "C:\Temp\GXT\output\"`
+
+Games
+=====
+Games known to use the GXT format include:
+* Danganronpa: Trigger Happy Havoc _(*.gxt)_ <sup>(1)</sup>
+* Danganronpa 2: Goodbye Despair _(*.gxt)_ <sup>(1)</sup>
+* Danganronpa Another Episode: Ultra Despair Girls _(*.btx)_ <sup>(1)</sup>
+* Digimon Story: Cyber Sleuth _(*.pvr)_
+* Sword Art Online: Hollow Fragment _(no extension)_ <sup>(2)</sup>
+* Senran Kagura: Shinovi Versus _(*.gxt)_
+* Soul Sacrifice Delta _(*.gxt)_
+
+<sup>(1)</sup> Require [dr_dec decompression script by BlackDragonHunt](https://github.com/BlackDragonHunt/Danganronpa-Tools) for most files; some .btx files are _not_ GXT  
+<sup>(2)</sup> Requires QuickBMS script to unpack OFS3 containers
 
 Acknowledgements
 ================
