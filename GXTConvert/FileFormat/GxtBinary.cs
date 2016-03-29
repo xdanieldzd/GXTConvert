@@ -41,18 +41,14 @@ namespace GXTConvert.FileFormat
             switch (Header.Version)
             {
                 case 0x10000003: textureInfoGeneratorFunc = new Func<Stream, SceGxtTextureInfo>((s) => { return new SceGxtTextureInfoV301(s); }); break;
-                //case 0x10000002: textureInfoGeneratorFunc = new Func<Stream, SceGxtTextureInfo>((s) => { return new SceGxtTextureInfoV201(s); }); break;
-                //case 0x10000001: textureInfoGeneratorFunc = new Func<Stream, SceGxtTextureInfo>((s) => { return new SceGxtTextureInfoV101(s); }); break;
+                case 0x10000002: textureInfoGeneratorFunc = new Func<Stream, SceGxtTextureInfo>((s) => { return new SceGxtTextureInfoV201(s); }); break;
+                case 0x10000001: textureInfoGeneratorFunc = new Func<Stream, SceGxtTextureInfo>((s) => { return new SceGxtTextureInfoV101(s); }); break;
                 default: throw new VersionNotImplementedException(Header.Version);
-                // TODO: re-add v2 and v1 once they're understood
             }
 
             TextureInfos = new SceGxtTextureInfo[Header.NumTextures];
             for (int i = 0; i < TextureInfos.Length; i++)
-            {
-                if (textureInfoGeneratorFunc != null)
-                    TextureInfos[i] = textureInfoGeneratorFunc(stream);
-            }
+                TextureInfos[i] = textureInfoGeneratorFunc(stream);
 
             // TODO: any other way to detect these?
             if (Encoding.ASCII.GetString(reader.ReadBytes(4)) == BUVChunk.ExpectedMagicNumber)
