@@ -28,9 +28,11 @@ Games known to use the GXT format include:
 * Danganronpa 2: Goodbye Despair _(*.gxt)_ <sup>(1)</sup>
 * Danganronpa Another Episode: Ultra Despair Girls _(*.btx)_ <sup>(1)</sup>
 * Digimon Story: Cyber Sleuth _(*.pvr)_
+* Gravity Rush _(*.gxt)_
 * Sword Art Online: Hollow Fragment _(no extension)_ <sup>(2)</sup>
 * Senran Kagura: Shinovi Versus _(*.gxt)_
 * Soul Sacrifice Delta _(*.gxt)_
+* Toro's Friend Network _(*.gxt)_
 
 <sup>(1)</sup> Require [dr_dec decompression script by BlackDragonHunt](https://github.com/BlackDragonHunt/Danganronpa-Tools) for most files; some .btx files are _not_ GXT  
 <sup>(2)</sup> Requires QuickBMS script to unpack OFS3 containers
