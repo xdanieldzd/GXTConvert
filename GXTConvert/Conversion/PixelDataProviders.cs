@@ -72,6 +72,10 @@ namespace GXTConvert.Conversion
             //{ SceGxmTextureFormat.PVRT2BPP_1BGR, new ProviderFunctionDelegate(PixelProviderPVRTC) },
             { SceGxmTextureFormat.PVRT4BPP_ABGR, new ProviderFunctionDelegate(PixelProviderPVRTC) },
             //{ SceGxmTextureFormat.PVRT4BPP_1BGR, new ProviderFunctionDelegate(PixelProviderPVRTC) },
+            //{ SceGxmTextureFormat.PVRTII2BPP_ABGR, new ProviderFunctionDelegate(PixelProviderPVRTC) },
+            //{ SceGxmTextureFormat.PVRTII2BPP_1BGR, new ProviderFunctionDelegate(PixelProviderPVRTC) },
+            //{ SceGxmTextureFormat.PVRTII4BPP_ABGR, new ProviderFunctionDelegate(PixelProviderPVRTC) },
+            //{ SceGxmTextureFormat.PVRTII4BPP_1BGR, new ProviderFunctionDelegate(PixelProviderPVRTC) },
             { SceGxmTextureFormat.U8U8U8_RGB, new ProviderFunctionDelegate(PixelProviderDirect) },
             { SceGxmTextureFormat.U8U8U8X8_RGB1, new ProviderFunctionDelegate(PixelProviderDirect) },
             { SceGxmTextureFormat.P4_ABGR, new ProviderFunctionDelegate(PixelProviderP4) }, // TODO: verify ALL these once files or bug reports come in!

@@ -49,14 +49,25 @@ namespace GXTConvert.FileFormat
         public override ushort GetHeight() { return (ushort)(ControlWords[2] >> 16); }
     }
 
-    // TODO: verify me! width and height seem wrong!
+    // TODO: fix me! width and/or height are wrong!
     public class SceGxtTextureInfoV201 : SceGxtTextureInfo
     {
         public SceGxtTextureInfoV201(Stream stream) : base(stream) { }
 
         public override SceGxmTextureType GetTextureType() { return (SceGxmTextureType)ControlWords[2]; }
         public override SceGxmTextureFormat GetTextureFormat() { return (SceGxmTextureFormat)ControlWords[3]; }
-        public override ushort GetWidth() { return (ushort)(ControlWords[0] & 0xFFFF); }
-        public override ushort GetHeight() { return (ushort)(ControlWords[1] & 0xFFFF); }
+        public override ushort GetWidth() { return (ushort)(1 << (ushort)((ControlWords[1] >> 0) & 0xF)); }
+        public override ushort GetHeight() { return (ushort)(1 << (ushort)((ControlWords[1] >> 16) & 0xF)); }
+    }
+
+    // TODO: fix me! width and/or height are wrong!
+    public class SceGxtTextureInfoV101 : SceGxtTextureInfo
+    {
+        public SceGxtTextureInfoV101(Stream stream) : base(stream) { }
+
+        public override SceGxmTextureType GetTextureType() { return (SceGxmTextureType)ControlWords[2]; }
+        public override SceGxmTextureFormat GetTextureFormat() { return (SceGxmTextureFormat)ControlWords[3]; }
+        public override ushort GetWidth() { return (ushort)(1 << (ushort)((ControlWords[1] >> 0) & 0xF)); }
+        public override ushort GetHeight() { return (ushort)(1 << (ushort)((ControlWords[1] >> 16) & 0xF)); }
     }
 }

@@ -44,6 +44,7 @@ namespace GXTConvert.FileFormat
                 {
                     case 0x10000003: TextureInfos[i] = new SceGxtTextureInfoV301(stream); break;
                     case 0x10000002: TextureInfos[i] = new SceGxtTextureInfoV201(stream); break;
+                    case 0x10000001: TextureInfos[i] = new SceGxtTextureInfoV101(stream); break;
                     default: throw new VersionNotImplementedException(Header.Version);
                 }
             }
@@ -116,7 +117,7 @@ namespace GXTConvert.FileFormat
 
         private Color[] FetchPalette(SceGxmTextureFormat textureFormat, int paletteIndex)
         {
-            if (paletteIndex == -1) return null;
+            if (paletteIndex == -1 || (paletteIndex >= P4Palettes.Length && paletteIndex >= P8Palettes.Length)) return null;
 
             Color[] palette;
             switch (textureFormat)

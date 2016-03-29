@@ -42,8 +42,9 @@ namespace GXTConvert.Conversion
 
             SceGxmTextureBaseFormat textureBaseFormat = info.GetTextureBaseFormat();
 
-            // TODO: is this right? PVRTC doesn't need this, but everything else does?
-            if (textureBaseFormat != SceGxmTextureBaseFormat.PVRT2BPP && textureBaseFormat != SceGxmTextureBaseFormat.PVRT4BPP)
+            // TODO: is this right? PVRTC/PVRTC2 doesn't need this, but everything else does?
+            if (textureBaseFormat != SceGxmTextureBaseFormat.PVRT2BPP && textureBaseFormat != SceGxmTextureBaseFormat.PVRT4BPP &&
+                textureBaseFormat != SceGxmTextureBaseFormat.PVRTII2BPP && textureBaseFormat != SceGxmTextureBaseFormat.PVRTII4BPP)
             {
                 SceGxmTextureType textureType = info.GetTextureType();
                 switch (textureType)

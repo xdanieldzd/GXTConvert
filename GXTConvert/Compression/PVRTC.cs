@@ -56,9 +56,10 @@ namespace GXTConvert.Compression
 
             PVRTDecompressPVRTC(
                 reader.ReadBytes((int)info.DataSize),
-                (info.GetTextureBaseFormat() == SceGxmTextureBaseFormat.PVRT2BPP ? 1 : 0),
+                (info.GetTextureBaseFormat() == SceGxmTextureBaseFormat.PVRT2BPP || info.GetTextureBaseFormat() == SceGxmTextureBaseFormat.PVRTII2BPP ? 1 : 0),
                 info.GetWidth(),
                 info.GetHeight(),
+                (info.GetTextureBaseFormat() == SceGxmTextureBaseFormat.PVRTII2BPP || info.GetTextureBaseFormat() == SceGxmTextureBaseFormat.PVRTII4BPP ? 1 : 0),
                 ref pixelData);
 
             return pixelData;
@@ -605,8 +606,10 @@ namespace GXTConvert.Compression
             return (int)(ui32Width * ui32Height / (uint)(ui32WordWidth / 2));
         }
 
-        static int PVRTDecompressPVRTC(byte[] pCompressedData, int Do2bitMode, int XDim, int YDim, ref byte[] pResultImage)
+        static int PVRTDecompressPVRTC(byte[] pCompressedData, int Do2bitMode, int XDim, int YDim, int IsPVRII, ref byte[] pResultImage)
         {
+            // TODO: actually do something w/ the IsPVRII flag...
+
             Pixel32[] pDecompressedData;
 
             int XTrueDim = Math.Max(XDim, ((Do2bitMode == 1) ? 16 : 8));
