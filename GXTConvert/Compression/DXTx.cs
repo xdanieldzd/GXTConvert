@@ -105,8 +105,8 @@ namespace GXTConvert.Compression
                     byte code = bitsExt[(y * 4) + x];
                     int destOffset = ((y * 4) + x) * 4;
 
-                    if (format == SceGxmTextureBaseFormat.UBC1)
-                        colorOut[destOffset + 3] = (byte)((color0 <= color1 && code == 3) ? 0 : 0xFF);
+                    // NOTE: Vita DXT1 appears to be RGB-only, thus always opaque
+                    colorOut[destOffset + 3] = 0xFF;
 
                     if (format == SceGxmTextureBaseFormat.UBC1 && color0 <= color1)
                     {
