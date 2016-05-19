@@ -30,6 +30,7 @@ Games known to use the GXT format include:
 * Digimon Story: Cyber Sleuth _(*.pvr)_
 * Dragon's Crown <sup>(2)</sup>
 * Gravity Rush _(*.gxt)_
+* IA/VT Colorful _(*.gxt; *.mxt)_
 * Muramasa Rebirth <sup>(2)</sup>
 * Sword Art Online: Hollow Fragment _(no extension)_ <sup>(3)</sup>
 * Senran Kagura: Shinovi Versus _(*.gxt)_
