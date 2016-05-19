@@ -30,16 +30,18 @@ Games known to use the GXT format include:
 * Digimon Story: Cyber Sleuth _(*.pvr)_
 * Dragon's Crown <sup>(2)</sup>
 * Gravity Rush _(*.gxt)_
-* IA/VT Colorful _(*.gxt; *.mxt)_
+* IA/VT Colorful _(*.gxt; *.mxt)_ <sup>(3)</sup>
 * Muramasa Rebirth <sup>(2)</sup>
-* Sword Art Online: Hollow Fragment _(no extension)_ <sup>(3)</sup>
+* Sword Art Online: Hollow Fragment _(no extension)_ <sup>(4)</sup>
 * Senran Kagura: Shinovi Versus _(*.gxt)_
-* Soul Sacrifice Delta _(*.gxt)_
+* Soul Sacrifice Delta _(*.gxt)_ <sup>(5)</sup>
 * Toro's Friend Network _(*.gxt)_
 
 <sup>(1)</sup> Require [dr_dec decompression script by BlackDragonHunt](https://github.com/BlackDragonHunt/Danganronpa-Tools) for most files; some .btx files are _not_ GXT  
 <sup>(2)</sup> Packed in _*.ftx_ containers  
-<sup>(3)</sup> Packed in _OFS3_ containers; requires QuickBMS script to unpack
+<sup>(3)</sup> Packed in _archive.pk_ container; requires [QuickBMS script by chrrox](http://zenhax.com/viewtopic.php?f=9&t=2183) to unpack  
+<sup>(4)</sup> Packed in _OFS3_ containers; requires QuickBMS script to unpack  
+<sup>(5)</sup> Packed in containers; requires [QuickBMS script by chrrox](http://zenhax.com/viewtopic.php?f=9&t=2183) to unpack  
 
 Acknowledgements
 ================
