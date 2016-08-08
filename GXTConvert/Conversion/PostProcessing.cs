@@ -122,6 +122,8 @@ namespace GXTConvert.Conversion
                     y = j / width;
                 }
 
+                if (y >= height || x >= width) continue;
+
                 Buffer.BlockCopy(pixelData, i * bytesPerPixel, unswizzled, ((y * width) + x) * bytesPerPixel, bytesPerPixel);
             }
 

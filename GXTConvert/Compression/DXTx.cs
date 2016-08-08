@@ -23,9 +23,9 @@ namespace GXTConvert.Compression
             byte[] pixelData = new byte[info.DataSize * 8];
 
             int pixelOffset = 0;
-            for (int y = 0; y < info.GetHeight(); y += 4)
+            for (int y = 0; y < info.GetHeightRounded(); y += 4)
             {
-                for (int x = 0; x < info.GetWidth(); x += 4)
+                for (int x = 0; x < info.GetWidthRounded(); x += 4)
                 {
                     byte[] decodedBlock = DecompressDxtBlock(reader, info.GetTextureBaseFormat());
                     for (int b = 0; b < dxtOrder.Length; b++) Buffer.BlockCopy(decodedBlock, b * 4, pixelData, pixelOffset + (dxtOrder[b] * 4), 4);

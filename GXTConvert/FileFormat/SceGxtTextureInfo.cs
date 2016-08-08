@@ -37,6 +37,20 @@ namespace GXTConvert.FileFormat
             ControlWords = new uint[4];
             for (int i = 0; i < ControlWords.Length; i++) ControlWords[i] = reader.ReadUInt32();
         }
+
+        public ushort GetWidthRounded()
+        {
+            int roundedWidth = 1;
+            while (roundedWidth < GetWidth()) roundedWidth *= 2;
+            return (ushort)roundedWidth;
+        }
+
+        public ushort GetHeightRounded()
+        {
+            int roundedHeight = 1;
+            while (roundedHeight < GetHeight()) roundedHeight *= 2;
+            return (ushort)roundedHeight;
+        }
     }
 
     public class SceGxtTextureInfoV301 : SceGxtTextureInfo

@@ -23,6 +23,8 @@ namespace GXTConvert.Conversion
 
         public PixelFormat PixelFormat { get; private set; }
         public byte[] PixelData { get; private set; }
+        public int RoundedWidth { get; private set; }
+        public int RoundedHeight { get; private set; }
 
         public TextureBundle(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
         {
@@ -31,8 +33,11 @@ namespace GXTConvert.Conversion
             Width = info.GetWidth();
             Height = info.GetHeight();
             PaletteIndex = info.PaletteIndex;
-            RawLineSize = (int)(info.DataSize / info.GetHeight());
+            RawLineSize = (int)(info.DataSize / info.GetHeightRounded());
             TextureFormat = info.GetTextureFormat();
+
+            RoundedWidth = info.GetWidthRounded();
+            RoundedHeight = info.GetHeightRounded();
 
             if (!PixelDataProviders.PixelFormatMap.ContainsKey(TextureFormat) || !PixelDataProviders.ProviderFunctions.ContainsKey(TextureFormat))
                 throw new FormatNotImplementedException(TextureFormat);
@@ -55,13 +60,18 @@ namespace GXTConvert.Conversion
 
                     case SceGxmTextureType.Tiled:
                         // TODO: verify me!
-                        PixelData = PostProcessing.UntileTexture(PixelData, Width, Height, PixelFormat);
+                        PixelData = PostProcessing.UntileTexture(PixelData, info.GetWidthRounded(), info.GetHeightRounded(), PixelFormat);
                         break;
 
                     case SceGxmTextureType.Swizzled:
                     case SceGxmTextureType.Cube:
                         // TODO: is cube really the same as swizzled? seems that way from CS' *env* files...
-                        PixelData = PostProcessing.UnswizzleTexture(PixelData, Width, Height, PixelFormat);
+                        PixelData = PostProcessing.UnswizzleTexture(PixelData, info.GetWidthRounded(), info.GetHeightRounded(), PixelFormat);
+                        break;
+
+                    case (SceGxmTextureType)0xA0000000:
+                        // TODO: mehhhhh
+                        PixelData = PostProcessing.UnswizzleTexture(PixelData, info.GetWidthRounded(), info.GetHeightRounded(), PixelFormat);
                         break;
 
                     default:
@@ -72,7 +82,7 @@ namespace GXTConvert.Conversion
 
         public Bitmap CreateTexture(Color[] palette = null)
         {
-            Bitmap texture = new Bitmap(Width, Height, PixelFormat);
+            Bitmap texture = new Bitmap(RoundedWidth, RoundedHeight, PixelFormat);
             BitmapData bmpData = texture.LockBits(new Rectangle(0, 0, texture.Width, texture.Height), ImageLockMode.ReadWrite, texture.PixelFormat);
 
             byte[] pixelsForBmp = new byte[bmpData.Height * bmpData.Stride];
@@ -97,7 +107,13 @@ namespace GXTConvert.Conversion
                 texture.Palette = texturePalette;
             }
 
-            return texture;
+            Bitmap realTexture = new Bitmap(Width, Height);
+            using (Graphics g = Graphics.FromImage(realTexture))
+            {
+                g.DrawImageUnscaled(texture, 0, 0);
+            }
+
+            return realTexture;
         }
     }
 }
