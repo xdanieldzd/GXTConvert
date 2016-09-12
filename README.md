@@ -40,6 +40,7 @@ Games known to use the GXT format include:
 * Senran Kagura: Shinovi Versus _(*.gxt)_
 * Soul Sacrifice Delta _(*.gxt)_ <sup>(5)</sup>
 * Toro's Friend Network _(*.gxt)_
+* Steins;Gate _(*.gxt)_
 
 <sup>(1)</sup> Require [dr_dec decompression script by BlackDragonHunt](https://github.com/BlackDragonHunt/Danganronpa-Tools) for most files; some .btx files are _not_ GXT  
 <sup>(2)</sup> Packed in _*.ftx_ containers  
