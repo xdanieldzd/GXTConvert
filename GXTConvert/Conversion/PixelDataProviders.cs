@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +15,7 @@ namespace GXTConvert.Conversion
         {
             /* L8       */ { SceGxmTextureFormat.U8_1RRR, PixelFormat.Format32bppArgb },
             /* A8       */ { SceGxmTextureFormat.U8_R000, PixelFormat.Format32bppArgb },
+            /* A8——111       */ { SceGxmTextureFormat.U8_R111, PixelFormat.Format32bppArgb },
             /* LA88     */ { SceGxmTextureFormat.U8U8_RGGG, PixelFormat.Format32bppArgb },
             /* RG88     */ { SceGxmTextureFormat.U8U8_00GR, PixelFormat.Format32bppArgb },
             /* ARGB1555 */ { SceGxmTextureFormat.U1U5U5U5_ARGB, PixelFormat.Format16bppArgb1555 },
@@ -59,6 +60,7 @@ namespace GXTConvert.Conversion
         {
             { SceGxmTextureFormat.U8_1RRR, new ProviderFunctionDelegate(PixelProviderU8_1RRR) },
             { SceGxmTextureFormat.U8_R000, new ProviderFunctionDelegate(PixelProviderU8_R000) }, // TODO: verify me!
+            { SceGxmTextureFormat.U8_R111, new ProviderFunctionDelegate(PixelProviderU8_R111) }, // TODO: verify me!
             { SceGxmTextureFormat.U8U8_RGGG, new ProviderFunctionDelegate(PixelProviderU8U8_RGGG) }, // TODO: verify me!
             { SceGxmTextureFormat.U8U8_00GR, new ProviderFunctionDelegate(PixelProviderU8U8_00GR) }, // TODO: verify me!
             { SceGxmTextureFormat.U1U5U5U5_ARGB, new ProviderFunctionDelegate(PixelProviderDirect) },
@@ -139,6 +141,17 @@ namespace GXTConvert.Conversion
             for (int i = 0; i < pixelData.Length; i += 4)
             {
                 pixelData[i + 0] = pixelData[i + 1] = pixelData[i + 2] = 0x00;
+                pixelData[i + 3] = reader.ReadByte();
+            };
+            return pixelData;
+        }
+
+        private static byte[] PixelProviderU8_R111(BinaryReader reader, SceGxtTextureInfo info)
+        {
+            byte[] pixelData = new byte[info.DataSize * 4];
+            for (int i = 0; i < pixelData.Length; i += 4)
+            {
+                pixelData[i + 0] = pixelData[i + 1] = pixelData[i + 2] = 0xff;
                 pixelData[i + 3] = reader.ReadByte();
             };
             return pixelData;
