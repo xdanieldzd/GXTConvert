@@ -26,6 +26,8 @@ namespace GXTConvert.Conversion
         public int RoundedWidth { get; private set; }
         public int RoundedHeight { get; private set; }
 
+        bool isCompressed;
+
         public TextureBundle(BinaryReader reader, SceGxtHeader header, SceGxtTextureInfo info)
         {
             reader.BaseStream.Seek(info.DataOffset, SeekOrigin.Begin);
@@ -36,9 +38,6 @@ namespace GXTConvert.Conversion
             RawLineSize = (int)(info.DataSize / info.GetHeightRounded());
             TextureFormat = info.GetTextureFormat();
 
-            RoundedWidth = info.GetWidthRounded();
-            RoundedHeight = info.GetHeightRounded();
-
             if (!PixelDataProviders.PixelFormatMap.ContainsKey(TextureFormat) || !PixelDataProviders.ProviderFunctions.ContainsKey(TextureFormat))
                 throw new FormatNotImplementedException(TextureFormat);
 
@@ -46,6 +45,23 @@ namespace GXTConvert.Conversion
             PixelData = PixelDataProviders.ProviderFunctions[TextureFormat](reader, info);
 
             SceGxmTextureBaseFormat textureBaseFormat = info.GetTextureBaseFormat();
+
+            // TODO, taken from Scarlet: verify me! Compressed formats need rounded dimensions (PuyoTet misc leftovers), uncompressed do not (DB:FC special illust)?
+
+            isCompressed = (textureBaseFormat == SceGxmTextureBaseFormat.UBC1 || textureBaseFormat == SceGxmTextureBaseFormat.UBC2 || textureBaseFormat == SceGxmTextureBaseFormat.UBC3 ||
+                textureBaseFormat == SceGxmTextureBaseFormat.PVRT2BPP || textureBaseFormat == SceGxmTextureBaseFormat.PVRT4BPP ||
+                textureBaseFormat == SceGxmTextureBaseFormat.PVRTII2BPP || textureBaseFormat == SceGxmTextureBaseFormat.PVRTII4BPP);
+
+            if (isCompressed)
+            {
+                RoundedWidth = info.GetWidthRounded();
+                RoundedHeight = info.GetHeightRounded();
+            }
+            else
+            {
+                RoundedWidth = Width;
+                RoundedHeight = Height;
+            }
 
             // TODO: is this right? PVRTC/PVRTC2 doesn't need this, but everything else does?
             if (textureBaseFormat != SceGxmTextureBaseFormat.PVRT2BPP && textureBaseFormat != SceGxmTextureBaseFormat.PVRT4BPP &&
@@ -60,18 +76,18 @@ namespace GXTConvert.Conversion
 
                     case SceGxmTextureType.Tiled:
                         // TODO: verify me!
-                        PixelData = PostProcessing.UntileTexture(PixelData, info.GetWidthRounded(), info.GetHeightRounded(), PixelFormat);
+                        PixelData = PostProcessing.UntileTexture(PixelData, RoundedWidth, RoundedHeight, PixelFormat);
                         break;
 
                     case SceGxmTextureType.Swizzled:
                     case SceGxmTextureType.Cube:
                         // TODO: is cube really the same as swizzled? seems that way from CS' *env* files...
-                        PixelData = PostProcessing.UnswizzleTexture(PixelData, info.GetWidthRounded(), info.GetHeightRounded(), PixelFormat);
+                        PixelData = PostProcessing.UnswizzleTexture(PixelData, RoundedWidth, RoundedHeight, PixelFormat);
                         break;
 
                     case (SceGxmTextureType)0xA0000000:
                         // TODO: mehhhhh
-                        PixelData = PostProcessing.UnswizzleTexture(PixelData, info.GetWidthRounded(), info.GetHeightRounded(), PixelFormat);
+                        PixelData = PostProcessing.UnswizzleTexture(PixelData, RoundedWidth, RoundedHeight, PixelFormat);
                         break;
 
                     default:
@@ -86,15 +102,28 @@ namespace GXTConvert.Conversion
             BitmapData bmpData = texture.LockBits(new Rectangle(0, 0, texture.Width, texture.Height), ImageLockMode.ReadWrite, texture.PixelFormat);
 
             byte[] pixelsForBmp = new byte[bmpData.Height * bmpData.Stride];
-            int bytesPerPixel = (Bitmap.GetPixelFormatSize(PixelFormat) / 8);
+            int bitsPerPixel = Bitmap.GetPixelFormatSize(texture.PixelFormat);
+
+            // TODO, taken from Scarlet: verify input stride/line size & copy length logic; *seems* to work okay now...?
+
+            int lineSize, copySize;
+
+            if ((bmpData.Width % 8) == 0 || isCompressed)
+                lineSize = (bmpData.Width / (bitsPerPixel < 8 ? 2 : 1)) * (bitsPerPixel < 8 ? 1 : bitsPerPixel / 8);
+            else
+                lineSize = (PixelData.Length / bmpData.Height);
+
+            if (texture.PixelFormat == System.Drawing.Imaging.PixelFormat.Format4bppIndexed)
+                copySize = bmpData.Width / 2;
+            else
+                copySize = (bmpData.Width / (bitsPerPixel < 8 ? 2 : 1)) * (bitsPerPixel < 8 ? 1 : bitsPerPixel / 8);
 
             for (int y = 0; y < bmpData.Height; y++)
             {
-                // TODO: verify this ([RawLineSize] vs the old [bmpData.Width * bytesPerPixel]) doesn't cause issues with other indexed files!
-                int srcOffset = y * (PixelFormat == PixelFormat.Format4bppIndexed || PixelFormat == PixelFormat.Format8bppIndexed ? RawLineSize : bmpData.Width * bytesPerPixel);
+                int srcOffset = y * lineSize;
                 int dstOffset = y * bmpData.Stride;
                 if (srcOffset >= PixelData.Length || dstOffset >= pixelsForBmp.Length) continue;
-                Buffer.BlockCopy(PixelData, srcOffset, pixelsForBmp, dstOffset, (PixelFormat == PixelFormat.Format4bppIndexed ? bmpData.Width / 2 : bmpData.Width * bytesPerPixel));
+                Buffer.BlockCopy(PixelData, srcOffset, pixelsForBmp, dstOffset, copySize);
             }
 
             Marshal.Copy(pixelsForBmp, 0, bmpData.Scan0, pixelsForBmp.Length);
