@@ -2,6 +2,10 @@ GXTConvert
 ==========
 __GXTConvert__ is a somewhat rudimentary converter for GXT-format textures used by games for the PlayStation Vita. It is written in C# and based on the .NET Framework.
 
+Maintenance Note
+================
+GXTConvert is currently only receiving limited maintenance. Please see the [Scarlet project](https://github.com/xdanieldzd/Scarlet) for a more generic set of libraries and a sample converter application to convert various game or console image formats to PNG, including GXT.
+
 Requirements
 ============
 * General
